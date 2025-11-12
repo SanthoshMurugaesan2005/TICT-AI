@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>English Voice → Tamil Text (Live)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{font-family:system-ui,Segoe UI,Roboto,Arial;}
+    body{background:#f3f6fb;margin:0;padding:28px;display:flex;justify-content:center;}
+    .card{width:100%;max-width:880px;background:white;border-radius:12px;padding:22px;box-shadow:0 8px 30px rgba(12,24,48,0.08);}
+    h1{margin:0 0 12px;font-size:20px}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    button, select{padding:10px 14px;border-radius:8px;border:1px solid #dbe6f0;background:#0ea5a4;color:white;cursor:pointer}
+    button.secondary{background:#64748b}
+    button.ghost{background:white;color:#0f172a;border:1px solid #cbd5e1}
+    select{background:white;color:#0f172a;border:1px solid #cbd5e1}
+    .panel{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+    .box{background:#fbfdff;border:1px solid #e6eef8;padding:12px;border-radius:8px;min-height:140px;white-space:pre-wrap;overflow:auto}
+    .status{margin-top:10px;color:#0f172a;font-weight:600}
+    .small{font-size:13px;color:#475569}
+    @media (max-width:720px){.panel{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+  <main class="card" role="main">
+    <h1>🎤 English Voice → Tamil Text (Live)</h1>
+    <div class="small">Speak in English; final recognized segments will be automatically translated to Tamil.</div>
+
+    <div class="controls" style="margin-top:12px">
+      <select id="langSelect" aria-label="English accent">
+        <option value="en-US">English (US)</option>
+        <option value="en-GB">English (UK)</option>
+        <option value="en-IN" selected>English (India)</option>
+      </select>
+
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" class="secondary">Stop</button>
+      <button id="pauseBtn" class="ghost">Pause</button>
+      <button id="clearBtn" class="ghost">Clear</button>
+
+      <button id="copyBtn" style="margin-left:auto" title="Copy Tamil output">Copy Tamil</button>
+      <button id="downloadBtn">Download TXT</button>
+      <button id="downloadWordBtn">Download Word</button>
+    </div>
+
+    <div class="status" id="status">Status: Idle</div>
+
+    <div class="panel" style="margin-top:14px">
+      <div>
+        <div class="small" style="margin-bottom:6px">Recognized English</div>
+        <div id="englishBox" class="box" aria-live="polite"></div>
+      </div>
+
+      <div>
+        <div class="small" style="margin-bottom:6px">Translated Tamil</div>
+        <div id="tamilBox" class="box" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:10px" class="small">
+      Note: Speech recognition works best in Chrome/Edge and requires microphone permission.  
+      If translation fails due to CORS or endpoint issues, a fallback service is used automatically.
+    </div>
+  </main>
+
+<script>
+(async function () {
+  // --- Helpers ---
+  function el(id){return document.getElementById(id);}
+  function setStatus(s, isError=false){ const st = el('status'); st.textContent = 'Status: ' + s; st.style.color = isError ? '#b91c1c' : ''; }
+  function decodeHTMLEntities(str){const txt = document.createElement('textarea'); txt.innerHTML = str; return txt.value;}
+
+  // --- DOM ---
+  const startBtn = el('startBtn');
+  const stopBtn = el('stopBtn');
+  const pauseBtn = el('pauseBtn');
+  const clearBtn = el('clearBtn');
+  const copyBtn = el('copyBtn');
+  const downloadBtn = el('downloadBtn');
+  const downloadWordBtn = el('downloadWordBtn');
+  const langSelect = el('langSelect');
+  const englishBox = el('englishBox');
+  const tamilBox = el('tamilBox');
+
+  // --- Speech Recognition ---
+  window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  if (!window.SpeechRecognition) {
+    setStatus('Web Speech API not supported in this browser.', true);
+    startBtn.disabled = stopBtn.disabled = pauseBtn.disabled = true;
+    return;
+  }
+
+  let recognition = null;
+  let isListening = false;
+
+  function createRecognition() {
+    const r = new window.SpeechRecognition();
+    r.lang = langSelect.value || 'en-IN';
+    r.interimResults = false;
+    r.continuous = true;
+    r.maxAlternatives = 1;
+
+    r.onstart = () => { isListening = true; setStatus('Listening… (speak now)'); };
+    r.onend = () => { isListening = false; setStatus('Stopped'); };
+    r.onerror = (ev) => { setStatus('Speech error: ' + (ev.error || 'unknown'), true); };
+
+    r.onresult = async (event) => {
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const res = event.results[i];
+        const transcript = res[0].transcript.trim();
+        if (res.isFinal && transcript) {
+          englishBox.textContent += transcript + '\n';
+          try {
+            setStatus('Translating…');
+            const tamil = await translateTextWithFallback(transcript);
+            tamilBox.textContent += tamil + '\n';
+            setStatus('Listening…');
+          } catch (err) {
+            setStatus('Translation failed', true);
+          }
+        }
+      }
+    };
+    return r;
+  }
+
+  // --- Translation ---
+  async function translateTextWithFallback(text) {
+    try {
+      const libreEndpoints = [
+        'https://libretranslate.de/translate',
+        'https://translate.argosopentech.com/translate'
+      ];
+      for (const endpoint of libreEndpoints) {
+        try {
+          const resp = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ q: text, source: 'en', target: 'ta', format: 'text' })
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.translatedText) return decodeHTMLEntities(data.translatedText);
+          }
+        } catch {}
+      }
+    } catch {}
+    // Fallback: MyMemory
+    const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=en|ta');
+    const j = await r.json();
+    return decodeHTMLEntities(j.responseData.translatedText);
+  }
+
+  // --- Controls ---
+  startBtn.onclick = async () => {
+    if (!recognition) recognition = createRecognition();
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      recognition.start();
+    } catch { setStatus('Microphone permission denied', true); }
+  };
+  stopBtn.onclick = () => { if (recognition && isListening) recognition.stop(); };
+  pauseBtn.onclick = () => { if (recognition && isListening) recognition.abort(); setStatus('Paused'); };
+  clearBtn.onclick = () => { englishBox.textContent = ''; tamilBox.textContent = ''; setStatus('Cleared'); };
+
+  copyBtn.onclick = async () => {
+    try { await navigator.clipboard.writeText(tamilBox.textContent || ''); setStatus('Tamil copied'); }
+    catch { setStatus('Copy failed', true); }
+  };
+
+  downloadBtn.onclick = () => {
+    const txt = tamilBox.textContent || '';
+    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'english-to-tamil.txt';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
+
+  downloadWordBtn.onclick = () => {
+    const text = tamilBox.textContent || '';
+    if (!text.trim()) { setStatus("No Tamil text to download", true); return; }
+    const header = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office'
+            xmlns:w='urn:schemas-microsoft-com:office:word'
+            xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'><title>Tamil Output</title></head>
+      <body style="font-family: Noto Sans Tamil, Latha, sans-serif;">
+    `;
+    const footer = "</body></html>";
+    const sourceHTML = header + `<p>${text.replace(/\n/g, "<br>")}</p>` + footer;
+    const blob = new Blob(['\ufeff', sourceHTML], { type: "application/msword" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "english-to-tamil.doc";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  langSelect.onchange = () => { recognition = null; };
+
+})();
+</script>
+</body>
+</html>

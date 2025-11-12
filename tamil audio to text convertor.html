@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ta">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tamil Audio → Text (Client-side)</title>
+  <style>
+    :root{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans Tamil',Arial;
+      margin:0;
+    }
+    body{
+      display:flex;
+      min-height:100vh;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(135deg,#e0f2f1,#f1f5f9);
+      padding:24px;
+    }
+    .card{
+      width:100%;
+      max-width:880px;
+      background:#ffffff;
+      border-radius:16px;
+      box-shadow:0 12px 35px rgba(18,38,63,0.1);
+      padding:24px;
+    }
+    h1{font-size:22px;margin:0 0 8px;color:#0f172a}
+    p.lead{margin:0 0 14px;color:#475569}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    button{padding:10px 14px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:white;cursor:pointer;transition:0.2s}
+    button:hover{background:#f1f5f9}
+    button.primary{background:#0ea5a4;color:white;border:none}
+    button.primary:hover{background:#0d9488}
+    button.danger{background:#ef4444;color:white;border:none}
+    button.danger:hover{background:#dc2626}
+    select,input[type=text]{padding:10px;border-radius:8px;border:1px solid #e6edf3}
+    .status{margin:8px 0;color:#065f46;font-weight:600}
+    .transcript{min-height:160px;border-radius:8px;padding:12px;border:1px dashed #cbd5e1;background:#f8fafc;white-space:pre-wrap;overflow:auto}
+    footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;color:#64748b}
+    .meta{font-size:13px}
+    .small{font-size:13px;color:#64748b}
+    @media (max-width:640px){.controls{flex-direction:column}footer{flex-direction:column;gap:8px;align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <main class="card" role="main">
+    <h1>Tamil Audio → Text</h1>
+    <p class="lead"> Speech Recognition API (Tamil).</p>
+
+    <div class="controls" aria-hidden="false">
+      <select id="langSelect" aria-label="language-select">
+        <option value="ta-IN">Tamil (India) — ta-IN</option>
+        <option value="ta">Tamil (generic) — ta</option>
+        <option value="en-IN">English (India) — useful for mixed speech</option>
+      </select>
+
+      <button id="startBtn" class="primary">Start</button>
+      <button id="stopBtn">Stop</button>
+      <button id="pauseBtn">Pause</button>
+      <button id="clearBtn">Clear</button>
+      <button id="downloadBtn">Download as TXT</button>
+      <button id="downloadWordBtn">Download as Word </button>
+      <button id="copyBtn">Copy</button>
+    </div>
+
+    <div class="small">Status: <span id="status">Idle</span></div>
+    <div style="margin-top:10px">
+      <div id="transcript" class="transcript" aria-live="polite" aria-atomic="true"></div>
+    </div>
+
+    <footer>
+      <div class="meta"></div>
+      <div class="meta"></div>
+    </footer>
+  </main>
+
+  <script>
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+
+    const statusEl = document.getElementById('status');
+    const transcriptEl = document.getElementById('transcript');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadWordBtn = document.getElementById('downloadWordBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const langSelect = document.getElementById('langSelect');
+
+    if (!window.SpeechRecognition) {
+      statusEl.textContent = 'Unsupported: your browser does not support the Web Speech API.';
+      statusEl.style.color = '#b91c1c';
+      startBtn.disabled = true;
+      stopBtn.disabled = true;
+      pauseBtn.disabled = true;
+      downloadBtn.disabled = true;
+      downloadWordBtn.disabled = true;
+      copyBtn.disabled = true;
+      clearBtn.disabled = true;
+    }
+
+    let recognition = null;
+    let isListening = false;
+    let lastTranscript = '';
+
+    function makeRecognition() {
+      if (!window.SpeechRecognition) return null;
+      const r = new window.SpeechRecognition();
+      r.lang = langSelect.value || 'ta-IN';
+      r.interimResults = true;
+      r.continuous = true;
+      r.maxAlternatives = 1;
+      return r;
+    }
+
+    function startListening() {
+      if (!window.SpeechRecognition) return;
+      if (isListening) return;
+      recognition = makeRecognition();
+      if (!recognition) return;
+
+      recognition.onstart = () => {
+        isListening = true;
+        statusEl.textContent = 'Listening… (speak now)';
+        statusEl.style.color = '';
+      };
+
+      recognition.onerror = (ev) => {
+        console.error('Speech recognition error', ev);
+        statusEl.textContent = 'Error: ' + (ev.error || 'unknown');
+        statusEl.style.color = '#b91c1c';
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+        statusEl.textContent = 'Stopped';
+      };
+
+      recognition.onresult = (event) => {
+        let interim = '';
+        let final = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const res = event.results[i];
+          if (res.isFinal) final += res[0].transcript;
+          else interim += res[0].transcript;
+        }
+
+        if (final) {
+          lastTranscript += final + '\n';
+          transcriptEl.textContent = lastTranscript;
+        }
+        transcriptEl.textContent = lastTranscript + interim;
+      };
+
+      try {
+        recognition.start();
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    function stopListening() {
+      if (!recognition) return;
+      try { recognition.stop(); } catch (e) {}
+      isListening = false;
+      statusEl.textContent = 'Stopping…';
+    }
+
+    function pauseListening() {
+      if (!recognition) return;
+      try { recognition.abort(); } catch (e) {}
+      isListening = false;
+      statusEl.textContent = 'Paused';
+    }
+
+    startBtn.addEventListener('click', () => {
+      navigator.mediaDevices && navigator.mediaDevices.getUserMedia({audio:true}).then(stream => {
+        stream.getTracks().forEach(t => t.stop());
+        startListening();
+      }).catch(err => {
+        statusEl.textContent = 'Microphone access denied.';
+        statusEl.style.color = '#b91c1c';
+      });
+    });
+
+    stopBtn.addEventListener('click', () => stopListening());
+    pauseBtn.addEventListener('click', () => pauseListening());
+
+    clearBtn.addEventListener('click', () => {
+      lastTranscript = '';
+      transcriptEl.textContent = '';
+      statusEl.textContent = 'Cleared';
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const blob = new Blob([transcriptEl.textContent || ''], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tamil-transcript.txt';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    downloadWordBtn.addEventListener('click', () => {
+      const content = transcriptEl.textContent || '';
+      const htmlContent = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>\n<head><meta charset='utf-8'><title>Export</title></head><body>${content.replace(/\n/g,'<br>')}</body></html>`;
+      const blob = new Blob([htmlContent], {type: 'application/msword'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tamil-transcript.doc';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(transcriptEl.textContent || '');
+        statusEl.textContent = 'Copied to clipboard';
+      } catch (e) {
+        statusEl.textContent = 'Copy failed — select & copy manually';
+      }
+    });
+
+    langSelect.addEventListener('change', () => {
+      if (isListening) {
+        pauseListening();
+        setTimeout(() => startListening(), 300);
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.altKey && e.key === 's') startBtn.click();
+      if (e.altKey && e.key === 'x') stopBtn.click();
+      if (e.altKey && e.key === 'c') clearBtn.click();
+    });
+
+    statusEl.textContent = ' click Start. ';
+  </script>
+</body>
+</html>

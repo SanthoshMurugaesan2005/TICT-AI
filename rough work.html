@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Tamil Converters</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil&display=swap" rel="stylesheet">
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans Tamil', Arial; margin: 0; }
+    body {
+      display: flex;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      /* Waterfall background image with gradient overlay */
+      background:
+        linear-gradient(135deg, rgba(224,242,241,0.7), rgba(241,245,249,0.7)),
+        url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      padding: 24px;
+      flex-direction: column;
+    }
+    #landingPage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: #00ffff;
+      border-radius: 16px;
+      box-shadow: 0 12px 35px rgba(8, 243, 231, 0.858);
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+    }
+    #landingPage h1 { 
+      font-size: 36px;
+       color: hsl(0, 100%, 50%);
+        margin-bottom: 20px;
+       }
+    #landingPage p {
+       font-size: 18px;
+        color: #033a00; 
+        margin-bottom: 30px;
+       }
+    #enterAppBtn {
+      background: #0ece12; 
+      color: rgb(129, 4, 4);
+       padding: 15px 30px; 
+       border: none; 
+       border-radius: 8px;
+      font-size: 20px;
+       cursor: pointer; 
+       transition: background 0.2s;
+    }
+    #enterAppBtn:hover { 
+      background: #0d9488;
+     }
+    #appContainer {
+      display: none; 
+      width: 100%; 
+      max-width: 900px; 
+      background: #fff;
+       border-radius: 16px;
+      box-shadow: 0 12px 35px rgba(18, 38, 63, 0.1);
+       padding: 24px; 
+       margin-bottom: 20px;
+    }
+    #appContainer h1 { 
+      font-size: 28px;
+       margin: 0 0 15px; 
+       color: #0f172a; 
+       text-align: center; 
+      }
+    #appContainer p.lead {
+       margin: 0 0 20px; 
+       color: #475569; 
+       text-align: center; 
+      }
+    .tabs { 
+      display: flex; 
+      justify-content: center;
+       margin-bottom: 20px; 
+       border-bottom: 1px solid #e6edf3;
+       }
+    .tab-button {
+      background: none; 
+      border: none; 
+      padding: 10px 20px; 
+      cursor: pointer; 
+      font-size: 18px;
+      color: #64748b; 
+      transition: color 0.2s, border-bottom 0.2s;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-button.active { 
+      color: #0ea5a4; 
+      border-bottom: 3px solid #0ea5a4;
+      font-weight: 600; 
+    }
+    .tab-content { 
+      display: none;
+      padding-top: 20px;
+     }
+    .tab-content.active { 
+      display: block; 
+    }
+    .controls { 
+      display: flex; 
+      gap: 8px; 
+      flex-wrap: wrap; 
+      margin-bottom: 12px; 
+      justify-content: center;
+     }
+    button {
+      padding: 10px 14px; 
+      border-radius: 8px; 
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      background: white; 
+      cursor: pointer; 
+      transition: 0.2s; 
+      font-size: 16px;
+    }
+    button:hover { 
+      background: #f1f5f9; 
+    }
+    button.primary {
+       background: #0ea5a4; 
+       color: white; 
+       border: none;
+       }
+    button.primary:hover {
+       background: #0d9488; 
+      }
+    button.secondary { 
+      background: #64748b; 
+      color: white;
+       border: none;
+       }
+    button.ghost { 
+      background: white;
+       color: #0f172a; 
+       border: 1px solid #cbd5e1;
+       }
+    select, input[type=text], input[type="file"] {
+      padding: 10px;
+       border-radius: 8px; 
+       border: 1px solid #e6edf3; 
+       font-size: 16px;
+    }
+    .status { 
+      margin: 8px 0; 
+      color: #065f46; 
+      font-weight: 600; 
+      text-align: center;
+     }
+    .transcript, #outputText, .box {
+      min-height: 160px; 
+      border-radius: 8px; 
+      padding: 12px; 
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc; 
+      white-space: pre-wrap; 
+      overflow: auto; 
+      margin-top: 10px;
+      font-size: 18px; 
+      text-align: left; 
+      direction: ltr;
+    }
+    #loader { 
+      display: none;
+       margin-top: 10px;
+        color: #888;
+         text-align: center;
+         }
+    .panel { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr;
+       gap: 12px;
+        margin-top: 12px;
+       }
+    @media (max-width: 640px) {
+      .controls { flex-direction: column; }
+      .tab-button { font-size: 16px; padding: 8px 15px; }
+      .panel { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Initial Landing Page -->
+  <div id="landingPage">
+    <h1>WELCOME TO TICT SOFT</h1>
+    <p>Your all-in-one tool for converting Tamil audio to text and extracting text from Tamil images.</p>
+    <button id="enterAppBtn">Start Processing</button>
+  </div>
+  <!-- Main Application Container (initially hidden) -->
+  <main id="appContainer" role="main">
+    <button id="backBtn" style="margin-bottom:16px;display:inline-block;padding:8px 18px;border-radius:8px;background:#64748b;color:white;border:none;cursor:pointer;">← Back</button>
+    <h1>Tamil Converters</h1>
+    <p class="lead">Cherish Tamil tradition—transcribe speech and extract meaning from images, all in one place.</p>
+    <div class="tabs">
+      <button class="tab-button active" onclick="openTab(event, 'audioConverter')">Audio to Text</button>
+      <button class="tab-button" onclick="openTab(event, 'imageConverter')">IMG to Text</button>
+      <button class="tab-button" onclick="openTab(event, 'engToTamConverter')">English Voice → Tamil Text</button>
+      <button class="tab-button" onclick="openTab(event, 'engImgToTamConverter')">English IMG → Tamil Text</button>
+  <button class="tab-button" onclick="openTab(event, 'kalvettuConverter')">Kalvettu IMG → Tamil Text</button>
+    </div>
+    <!-- Audio Converter Tab -->
+    <div id="audioConverter" class="tab-content active">
+      <h2>Audio to Text</h2>
+      <p class="small">Utilizes the Web Speech API for real-time Tamil speech recognition.</p>
+      <div class="controls">
+        <select id="langSelect" aria-label="language-select">
+          <option value="ta-IN">Tamil (India) — ta-IN</option>
+          <option value="ta">Tamil (generic) — ta</option>
+          <option value="en-IN">English (India) — useful for mixed speech</option>
+        </select>
+        <button id="startBtn" class="primary">Start</button>
+        <button id="stopBtn">Stop</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="clearBtn">Clear</button>
+        <button id="downloadBtn">Download as TXT</button>
+        <button id="downloadWordBtn">Download as Word</button>
+        <button id="copyBtn">Copy</button>
+      </div>
+      <div class="small">Status: <span id="status">Click Start.</span></div>
+      <div style="margin-top:10px">
+        <div id="transcript" class="transcript" aria-live="polite" aria-atomic="true"></div>
+      </div>
+    </div>
+    <!-- Image Converter Tab -->
+    <div id="imageConverter" class="tab-content">
+      <h2>Image to Text</h2>
+      <p class="small">Recognition on Tamil images.</p>
+      <div class="controls">
+        <input type="file" id="imageUpload" accept="image/*">
+        <button class="primary" onclick="convertImage()">Extract Text</button>
+        <button onclick="downloadAsWordImage()">Download as Word</button>
+      </div>
+      <div id="loader">🔄 Processing Extraction...</div>
+      <div id="outputText"></div>
+    </div>
+    <!-- English Voice → Tamil Text Tab -->
+    <div id="engToTamConverter" class="tab-content">
+      <h2>🎤 English Voice → Tamil Text (Live)</h2>
+      <div class="small">Speak in English; final recognized segments will be automatically translated to Tamil.</div>
+      <div class="controls" style="margin-top:12px">
+        <select id="engvLangSelect" aria-label="English accent">
+          <option value="en-US">English (US)</option>
+          <option value="en-GB">English (UK)</option>
+          <option value="en-IN" selected>English (India)</option>
+        </select>
+        <button id="engvStartBtn">Start</button>
+        <button id="engvStopBtn" class="secondary">Stop</button>
+        <button id="engvPauseBtn" class="ghost">Pause</button>
+        <button id="engvClearBtn" class="ghost">Clear</button>
+        <button id="engvCopyBtn" style="margin-left:auto" title="Copy Tamil output">Copy Tamil</button>
+        <button id="engvDownloadBtn">Download TXT</button>
+        <button id="engvDownloadWordBtn">Download Word</button>
+      </div>
+      <div class="status" id="engvStatus">Status: Idle</div>
+      <div class="panel" style="margin-top:14px">
+        <div>
+          <div class="small" style="margin-bottom:6px">Recognized English</div>
+          <div id="engvEnglishBox" class="box" aria-live="polite"></div>
+        </div>
+        <div>
+          <div class="small" style="margin-bottom:6px">Translated Tamil</div>
+          <div id="engvTamilBox" class="box" aria-live="polite"></div>
+        </div>
+      </div>
+      <div style="margin-top:10px" class="small">
+      </div>
+    </div>
+    <!-- English Image to Tamil Text Tab -->
+    <div id="engImgToTamConverter" class="tab-content">
+      <h2>🖼️ English Image → Tamil Text</h2>
+      <p class="small">Extract English text from an image and translate it to Tamil.</p>
+      <div class="controls">
+        <input type="file" id="engImgUpload" accept="image/*">
+        <button class="primary" id="engImgExtractBtn">Extract & Translate</button>
+        <button id="engImgDownloadBtn">Download Tamil as TXT</button>
+        <button id="engImgDownloadWordBtn">Download Tamil as Word</button>
+      </div>
+      <div id="engImgLoader">🔄 Processing Extraction...</div>
+      <div class="panel" style="margin-top:14px">
+        <div>
+          <div class="small" style="margin-bottom:6px">Extracted English</div>
+          <div id="engImgEnglishBox" class="box" aria-live="polite"></div>
+        </div>
+        <div>
+          <div class="small" style="margin-bottom:6px">Translated Tamil</div>
+          <div id="engImgTamilBox" class="box" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin: 24px 0 0 0;">
+      <button id="downloadBothWordBtn" class="primary" style="font-size:18px;">Download Both as Word</button>
+    </div>
+    <!-- Kalvettu Image to Tamil Meaning Tab -->
+    <div id="kalvettuConverter" class="tab-content">
+      <h2>🗿 Kalvettu Image → Tamil Meaning</h2>
+      <p class="small">Upload an old Tamil kalvettu (inscription) image to extract the text and get its meaning.</p>
+      <div class="controls">
+        <input type="file" id="kalvettuImgUpload" accept="image/*">
+        <button class="primary" id="kalvettuExtractBtn">Extract & Get Meaning</button>
+      </div>
+      <div id="kalvettuLoader">🔄 Processing image...</div>
+      <div class="panel" style="margin-top:14px">
+        <div>
+          <div class="small" style="margin-bottom:6px">Extracted Tamil Text</div>
+          <div id="kalvettuTamilBox" class="box" aria-live="polite"></div>
+        </div>
+        <div>
+          <div class="small" style="margin-bottom:6px">Tamil Meaning</div>
+          <div id="kalvettuMeaningBox" class="box" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+    <!-- Feature Selection Page (second page, buttons only) -->
+    <div id="featureSelectPage" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#fff;border-radius:16px;box-shadow:0 12px 35px rgb(9,249,237);padding:40px;max-width:600px;width:100%;height:100vh;">
+      <div style="display:flex;flex-direction:column;gap:24px;width:100%;max-width:400px;">
+        <button class="feature-btn" data-feature="audioConverter">🎤 Audio to Text</button>
+        <button class="feature-btn" data-feature="imageConverter">🖼️ Image to Text</button>
+        <button class="feature-btn" data-feature="engToTamConverter">🎤 English Voice → Tamil Text</button>
+        <button class="feature-btn" data-feature="engImgToTamConverter">🖼️ English Image → Tamil Text</button>
+        <button class="feature-btn" data-feature="kalvettuConverter">🗿 Kalvettu Image → Tamil Meaning</button>
+      </div>
+    </div>
+    <!-- Main Application Container (third page, initially hidden) -->
+    <main id="appContainer" role="main" style="display:none;">
+      <button id="backToFeatureBtn" style="margin-bottom:16px;display:inline-block;padding:8px 18px;border-radius:8px;background:#64748b;color:white;border:none;cursor:pointer;">← Back</button>
+      <h1 id="featureTitle">Tamil Converters</h1>
+      <div class="tabs" style="display:none;"></div>
+      <!-- All feature tab contents remain, but only one is shown at a time -->
+      <div id="audioConverter" class="tab-content">
+        // ...existing code...
+      </div>
+      <div id="imageConverter" class="tab-content">
+        // ...existing code...
+      </div>
+      <div id="engToTamConverter" class="tab-content">
+        // ...existing code...
+      </div>
+      <div id="engImgToTamConverter" class="tab-content">
+        // ...existing code...
+      </div>
+      <div id="kalvettuConverter" class="tab-content">
+        // ...existing code...
+      </div>
+      <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin: 24px 0 0 0;">
+        <button id="downloadBothWordBtn" class="primary" style="font-size:18px;">Download Both as Word</button>
+      </div>
+    </main>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+  <script>
+    // --- Kalvettu Image to Tamil Meaning Feature ---
+    (function () {
+      function el(id){return document.getElementById(id);}
+      const upload = el('kalvettuImgUpload');
+      const extractBtn = el('kalvettuExtractBtn');
+      const tamilBox = el('kalvettuTamilBox');
+      const meaningBox = el('kalvettuMeaningBox');
+      const loader = el('kalvettuLoader');
+      loader.style.display = 'none';
+      extractBtn.onclick = function() {
+        if (!upload.files.length) {
+          alert("Please select a kalvettu image first!");
+          return;
+        }
+        loader.style.display = 'block';
+        loader.textContent = '🔄 Processing image...';
+        tamilBox.textContent = '';
+        meaningBox.textContent = '';
+        const file = upload.files[0];
+        const reader = new FileReader();
+        reader.onload = function () {
+          Tesseract.recognize(
+            reader.result,
+            'tam', // Tamil language
+            { logger: m => console.log(m) }
+          ).then(({ data: { text } }) => {
+            loader.style.display = 'none';
+            tamilBox.textContent = text;
+            // For demo: meaning is just the extracted text. For real use, replace with actual interpretation logic.
+            meaningBox.textContent = text ? 'பொருள்: ' + text : 'பொருள் கிடைக்கவில்லை';
+          }).catch(err => {
+            loader.style.display = 'none';
+            tamilBox.textContent = "❌ Error processing image.";
+            meaningBox.textContent = '';
+            console.error(err);
+          });
+        };
+        reader.readAsDataURL(file);
+      };
+    })();
+    // --- Initial Page Logic ---
+    const landingPage = document.getElementById('landingPage');
+    const appContainer = document.getElementById('appContainer');
+    const enterAppBtn = document.getElementById('enterAppBtn');
+    enterAppBtn.addEventListener('click', () => {
+      landingPage.style.display = 'none';
+      appContainer.style.display = 'block';
+    });
+    // Back button logic: return to landing page
+    const backBtn = document.getElementById('backBtn');
+    backBtn.addEventListener('click', () => {
+      appContainer.style.display = 'none';
+      landingPage.style.display = 'flex';
+    });
+    // --- Tab Switching Logic ---
+    function openTab(evt, tabName) {
+      var i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("tab-content");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].classList.remove("active");
+      }
+      tablinks = document.getElementsByClassName("tab-button");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+      document.getElementById(tabName).classList.add("active");
+      evt.currentTarget.className += " active";
+    }
+    // --- Audio Converter Script ---
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    const statusEl = document.getElementById('status');
+    const transcriptEl = document.getElementById('transcript');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadWordBtn = document.getElementById('downloadWordBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const langSelect = document.getElementById('langSelect');
+    if (!window.SpeechRecognition) {
+      statusEl.textContent = 'Unsupported: your browser does not support the Web Speech API.';
+      statusEl.style.color = '#b91c1c';
+      startBtn.disabled = true;
+      stopBtn.disabled = true;
+      pauseBtn.disabled = true;
+      downloadBtn.disabled = true;
+      downloadWordBtn.disabled = true;
+      copyBtn.disabled = true;
+      clearBtn.disabled = true;
+    }
+    let recognition = null;
+    let isListening = false;
+    let lastTranscript = '';
+    function makeRecognition() {
+      if (!window.SpeechRecognition) return null;
+      const r = new window.SpeechRecognition();
+      r.lang = langSelect.value || 'ta-IN';
+      r.interimResults = true;
+      r.continuous = true;
+      r.maxAlternatives = 1;
+      return r;
+    }
+    function startListening() {
+      if (!window.SpeechRecognition) return;
+      if (isListening) return;
+      recognition = makeRecognition();
+      if (!recognition) return;
+      recognition.onstart = () => {
+        isListening = true;
+        statusEl.textContent = 'Listening… (speak now)';
+        statusEl.style.color = '';
+      };
+      recognition.onerror = (ev) => {
+        console.error('Speech recognition error', ev);
+        statusEl.textContent = 'Error: ' + (ev.error || 'unknown');
+        statusEl.style.color = '#b91c1c';
+      };
+      recognition.onend = () => {
+        isListening = false;
+        statusEl.textContent = 'Stopped';
+      };
+      recognition.onresult = (event) => {
+        let interim = '';
+        let final = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const res = event.results[i];
+          if (res.isFinal) final += res[0].transcript;
+          else interim += res[0].transcript;
+        }
+        if (final) {
+          lastTranscript += final + '\n';
+          transcriptEl.textContent = lastTranscript;
+        }
+        transcriptEl.textContent = lastTranscript + interim;
+      };
+      try { recognition.start(); } catch (e) { console.warn(e); }
+    }
+    function stopListening() {
+      if (!recognition) return;
+      try { recognition.stop(); } catch (e) {}
+      isListening = false;
+      statusEl.textContent = 'Stopping…';
+    }
+    function pauseListening() {
+      if (!recognition) return;
+      try { recognition.abort(); } catch (e) {}
+      isListening = false;
+      statusEl.textContent = 'Paused';
+    }
+    startBtn.addEventListener('click', () => {
+      navigator.mediaDevices && navigator.mediaDevices.getUserMedia({audio:true}).then(stream => {
+        stream.getTracks().forEach(t => t.stop());
+        startListening();
+      }).catch(err => {
+        statusEl.textContent = 'Microphone access denied.';
+        statusEl.style.color = '#b91c1c';
+      });
+    });
+    stopBtn.addEventListener('click', () => stopListening());
+    pauseBtn.addEventListener('click', () => pauseListening());
+    clearBtn.addEventListener('click', () => {
+      lastTranscript = '';
+      transcriptEl.textContent = '';
+      statusEl.textContent = 'Cleared';
+    });
+    downloadBtn.addEventListener('click', () => {
+      const blob = new Blob([transcriptEl.textContent || ''], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tamil-audio-transcript.txt';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+    downloadWordBtn.addEventListener('click', () => {
+      const content = transcriptEl.textContent || '';
+      const htmlContent = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>\n<head><meta charset='utf-8'><title>Export</title></head><body>${content.replace(/\n/g,'<br>')}</body></html>`;
+      const blob = new Blob([htmlContent], {type: 'application/msword'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tamil-audio-transcript.doc';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(transcriptEl.textContent || '');
+        statusEl.textContent = 'Copied to clipboard';
+      } catch (e) {
+        statusEl.textContent = 'Copy failed — select & copy manually';
+      }
+    });
+    langSelect.addEventListener('change', () => {
+      if (isListening) {
+        pauseListening();
+        setTimeout(() => startListening(), 300);
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.altKey && e.key === 's') startBtn.click();
+      if (e.altKey && e.key === 'x') stopBtn.click();
+      if (e.altKey && e.key === 'c') clearBtn.click();
+    });
+    // --- Image Converter Script ---
+    const imageUpload = document.getElementById('imageUpload');
+    const outputText = document.getElementById('outputText');
+    const loader = document.getElementById('loader');
+    function convertImage() {
+      if (!imageUpload.files.length) {
+        alert("Please select an image first!");
+        return;
+      }
+      loader.style.display = 'block';
+      outputText.textContent = "";
+      const file = imageUpload.files[0];
+      const reader = new FileReader();
+      reader.onload = function () {
+        Tesseract.recognize(
+          reader.result,
+          'tam', // Tamil language
+          { logger: m => console.log(m) }
+        ).then(({ data: { text } }) => {
+          loader.style.display = 'none';
+          outputText.textContent = text;
+        }).catch(err => {
+          loader.style.display = 'none';
+          outputText.textContent = "❌ Error processing image.";
+          console.error(err);
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+    function downloadAsWordImage() {
+      const text = outputText.textContent;
+      if (!text.trim()) {
+        alert("No text available to download.");
+        return;
+      }
+      const header = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office'
+              xmlns:w='urn:schemas-microsoft-com:office:word'
+              xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>Tamil Text</title></head>
+        <body style="font-family: Noto Sans Tamil, Latha, sans-serif;">
+      `;
+      const footer = "</body></html>";
+      const sourceHTML = header + `<p>${text.replace(/\n/g, "<br>")}</p>` + footer;
+      const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'tamil-image-text.doc';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+    // --- Download Both as Word Feature ---
+    document.getElementById('downloadBothWordBtn').addEventListener('click', function() {
+      // Collect all outputs
+      const audioText = document.getElementById('transcript').textContent || '';
+      const imageText = document.getElementById('outputText').textContent || '';
+      const engvEnglish = document.getElementById('engvEnglishBox').textContent || '';
+      const engvTamil = document.getElementById('engvTamilBox').textContent || '';
+      const engImgEnglish = document.getElementById('engImgEnglishBox').textContent || '';
+      const engImgTamil = document.getElementById('engImgTamilBox').textContent || '';
+
+      // Build unique sections (skip empty, skip duplicates)
+      const sections = [];
+      function addSection(title, text) {
+        if (text && text.trim() && !sections.some(s => s.text === text.trim())) {
+          sections.push({ title, text: text.trim() });
+        }
+      }
+      addSection('--- Audio to Text ---', audioText);
+      addSection('--- Image to Text ---', imageText);
+      addSection('--- English Voice (Recognized) ---', engvEnglish);
+      addSection('--- English Voice → Tamil Text ---', engvTamil);
+      addSection('--- English Image (Extracted) ---', engImgEnglish);
+      addSection('--- English Image → Tamil Text ---', engImgTamil);
+
+      if (sections.length === 0) {
+        alert('No content available to download.');
+        return;
+      }
+
+      let combined = '';
+      for (const s of sections) {
+        combined += s.title + '\n' + s.text + '\n\n';
+      }
+      const htmlContent = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>\n<head><meta charset='utf-8'><title>Export</title></head><body>${combined.replace(/\n/g,'<br>')}</body></html>`;
+      const blob = new Blob([htmlContent], {type: 'application/msword'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tamil-all-features.doc';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+    // --- English Voice → Tamil Text Feature ---
+    (function () {
+      function el(id){return document.getElementById(id);}
+      function setStatus(s, isError=false){ const st = el('engvStatus'); st.textContent = 'Status: ' + s; st.style.color = isError ? '#b91c1c' : ''; }
+      function decodeHTMLEntities(str){const txt = document.createElement('textarea'); txt.innerHTML = str; return txt.value;}
+      const startBtn = el('engvStartBtn');
+      const stopBtn = el('engvStopBtn');
+      const pauseBtn = el('engvPauseBtn');
+      const clearBtn = el('engvClearBtn');
+      const copyBtn = el('engvCopyBtn');
+      const downloadBtn = el('engvDownloadBtn');
+      const downloadWordBtn = el('engvDownloadWordBtn');
+      const langSelect = el('engvLangSelect');
+      const englishBox = el('engvEnglishBox');
+      const tamilBox = el('engvTamilBox');
+      window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+      if (!window.SpeechRecognition) {
+        setStatus('Web Speech API not supported in this browser.', true);
+        startBtn.disabled = stopBtn.disabled = pauseBtn.disabled = true;
+        return;
+      }
+      let recognition = null;
+      let isListening = false;
+      function createRecognition() {
+        const r = new window.SpeechRecognition();
+        r.lang = langSelect.value || 'en-IN';
+        r.interimResults = false;
+        r.continuous = true;
+        r.maxAlternatives = 1;
+        r.onstart = () => { isListening = true; setStatus('Listening… (speak now)'); };
+        r.onend = () => { isListening = false; setStatus('Stopped'); };
+        r.onerror = (ev) => { setStatus('Speech error: ' + (ev.error || 'unknown'), true); };
+        r.onresult = async (event) => {
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            const res = event.results[i];
+            const transcript = res[0].transcript.trim();
+            if (res.isFinal && transcript) {
+              englishBox.textContent += transcript + '\n';
+              try {
+                setStatus('Translating…');
+                const tamil = await translateTextWithFallback(transcript);
+                tamilBox.textContent += tamil + '\n';
+                setStatus('Listening…');
+              } catch (err) {
+                setStatus('Translation failed', true);
+              }
+            }
+          }
+        };
+        return r;
+      }
+      async function translateTextWithFallback(text) {
+        // Split text into 3500-char chunks for API limits
+        const chunks = [];
+        let i = 0;
+        while (i < text.length) {
+          chunks.push(text.slice(i, i + 3500));
+          i += 3500;
+        }
+        let tamilResult = '';
+        for (const chunk of chunks) {
+          let translated = '';
+          try {
+            const libreEndpoints = [
+              'https://libretranslate.de/translate',
+              'https://translate.argosopentech.com/translate'
+            ];
+            for (const endpoint of libreEndpoints) {
+              try {
+                const resp = await fetch(endpoint, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ q: chunk, source: 'en', target: 'ta', format: 'text' })
+                });
+                if (resp.ok) {
+                  const data = await resp.json();
+                  if (data.translatedText) { translated = decodeHTMLEntities(data.translatedText); break; }
+                } else {
+                  setStatus('Translation API error: ' + resp.statusText, true);
+                }
+              } catch (e) {
+                setStatus('Translation API error: ' + e.message, true);
+              }
+            }
+          } catch (e) {
+            setStatus('Translation error: ' + e.message, true);
+          }
+          if (!translated) {
+            // Fallback: MyMemory
+            try {
+              const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunk) + '&langpair=en|ta');
+              const j = await r.json();
+              translated = decodeHTMLEntities(j.responseData.translatedText);
+            } catch (e) {
+              setStatus('Fallback translation error: ' + e.message, true);
+            }
+          }
+          tamilResult += translated + '\n';
+        }
+        return tamilResult.trim();
+      }
+      startBtn.onclick = async () => {
+        if (!recognition) recognition = createRecognition();
+        try {
+          await navigator.mediaDevices.getUserMedia({ audio: true });
+          recognition.start();
+        } catch { setStatus('Microphone permission denied', true); }
+      };
+      stopBtn.onclick = () => { if (recognition && isListening) recognition.stop(); };
+      pauseBtn.onclick = () => { if (recognition && isListening) recognition.abort(); setStatus('Paused'); };
+      clearBtn.onclick = () => { englishBox.textContent = ''; tamilBox.textContent = ''; setStatus('Cleared'); };
+      copyBtn.onclick = async () => {
+        try { await navigator.clipboard.writeText(tamilBox.textContent || ''); setStatus('Tamil copied'); }
+        catch { setStatus('Copy failed', true); }
+      };
+      downloadBtn.onclick = () => {
+        const txt = tamilBox.textContent || '';
+        const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'english-to-tamil.txt';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      };
+      downloadWordBtn.onclick = () => {
+        const text = tamilBox.textContent || '';
+        if (!text.trim()) { setStatus("No Tamil text to download", true); return; }
+        const header = `
+          <html xmlns:o='urn:schemas-microsoft-com:office:office'
+                xmlns:w='urn:schemas-microsoft-com:office:word'
+                xmlns='http://www.w3.org/TR/REC-html40'>
+          <head><meta charset='utf-8'><title>Tamil Output</title></head>
+          <body style="font-family: Noto Sans Tamil, Latha, sans-serif;">
+        `;
+        const footer = "</body></html>";
+        const sourceHTML = header + `<p>${text.replace(/\n/g, "<br>")}</p>` + footer;
+        const blob = new Blob(['\ufeff', sourceHTML], { type: "application/msword" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "english-to-tamil.doc";
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+      langSelect.onchange = () => { recognition = null; };
+    })();
+    // --- English Image to Tamil Text Feature ---
+    (function () {
+      function el(id){return document.getElementById(id);}
+      function setStatus(s, isError=false){ const st = el('engImgLoader'); st.textContent = s; st.style.color = isError ? '#b91c1c' : ''; }
+      function decodeHTMLEntities(str){const txt = document.createElement('textarea'); txt.innerHTML = str; return txt.value;}
+      const upload = el('engImgUpload');
+      const extractBtn = el('engImgExtractBtn');
+      const downloadBtn = el('engImgDownloadBtn');
+      const downloadWordBtn = el('engImgDownloadWordBtn');
+      const englishBox = el('engImgEnglishBox');
+      const tamilBox = el('engImgTamilBox');
+      const loader = el('engImgLoader');
+      loader.style.display = 'none';
+      async function translateTextWithFallback(text) {
+        // Split text into 5000-char chunks for API limits
+        const chunks = [];
+        let i = 0;
+        while (i < text.length) {
+          chunks.push(text.slice(i, i + 5000));
+          i += 5000;
+        }
+        let tamilResult = '';
+        for (const chunk of chunks) {
+          let translated = '';
+          try {
+            const libreEndpoints = [
+              'https://libretranslate.de/translate',
+              'https://translate.argosopentech.com/translate'
+            ];
+            for (const endpoint of libreEndpoints) {
+              try {
+                const resp = await fetch(endpoint, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ q: chunk, source: 'en', target: 'ta', format: 'text' })
+                });
+                if (resp.ok) {
+                  const data = await resp.json();
+                  if (data.translatedText) { translated = decodeHTMLEntities(data.translatedText); break; }
+                } else {
+                  setStatus('Translation API error: ' + resp.statusText, true);
+                }
+              } catch (e) {
+                setStatus('Translation API error: ' + e.message, true);
+              }
+            }
+          } catch (e) {
+            setStatus('Translation error: ' + e.message, true);
+          }
+          if (!translated) {
+            // Fallback: MyMemory
+            try {
+              const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunk) + '&langpair=en|ta');
+              const j = await r.json();
+              translated = decodeHTMLEntities(j.responseData.translatedText);
+            } catch (e) {
+              setStatus('Fallback translation error: ' + e.message, true);
+            }
+          }
+          tamilResult += translated + '\n';
+        }
+        return tamilResult.trim();
+      }
+      extractBtn.onclick = function() {
+        if (!upload.files.length) {
+          alert("Please select an image first!");
+          return;
+        }
+        loader.style.display = 'block';
+        setStatus('🔄 Processing image...');
+        englishBox.textContent = '';
+        tamilBox.textContent = '';
+        const file = upload.files[0];
+        const reader = new FileReader();
+        reader.onload = function () {
+          Tesseract.recognize(
+            reader.result,
+            'eng', // English language
+            { logger: m => console.log(m) }
+          ).then(async ({ data: { text } }) => {
+            loader.style.display = 'none';
+            englishBox.textContent = text;
+            if (!text.trim()) {
+              setStatus('No English text found in image.', true);
+              return;
+            }
+            setStatus('Translating...');
+            try {
+              const tamil = await translateTextWithFallback(text);
+              tamilBox.textContent = tamil;
+              setStatus('Done');
+            } catch (e) {
+              tamilBox.textContent = '';
+              setStatus('Translation failed: ' + e.message, true);
+            }
+          }).catch(err => {
+            loader.style.display = 'none';
+            englishBox.textContent = "❌ Error processing image.";
+            tamilBox.textContent = '';
+            setStatus('OCR error: ' + err.message, true);
+            console.error(err);
+          });
+        };
+        reader.readAsDataURL(file);
+      };
+      downloadBtn.onclick = function() {
+        const txt = tamilBox.textContent || '';
+        if (!txt.trim()) { alert('No Tamil text to download.'); return; }
+        const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'english-image-to-tamil.txt';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      };
+      downloadWordBtn.onclick = function() {
+        const text = tamilBox.textContent || '';
+        if (!text.trim()) { alert('No Tamil text to download.'); return; }
+        const header = `
+          <html xmlns:o='urn:schemas-microsoft-com:office:office'
+                xmlns:w='urn:schemas-microsoft-com:office:word'
+                xmlns='http://www.w3.org/TR/REC-html40'>
+          <head><meta charset='utf-8'><title>Tamil Output</title></head>
+          <body style="font-family: Noto Sans Tamil, Latha, sans-serif;">
+        `;
+        const footer = "</body></html>";
+        const sourceHTML = header + `<p>${text.replace(/\n/g, "<br>")}</p>` + footer;
+        const blob = new Blob(['\ufeff', sourceHTML], { type: "application/msword" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "english-image-to-tamil.doc";
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+    })();
+  </script>
+</body>
+</html>
